@@ -5,14 +5,15 @@ import sys
 
 class DT():
 
-    def __init__(self,fnames, dtname, maxDepth, dotname, notes):
+    def __init__(self,fnames, dtdir, dtname, maxDepth, dotname, notes):
         self.fnames = fnames # a list of strings
+        self.dtdir = dtdir # string
         self.dtname = dtname # string
         self.maxDepth = maxDepth # integer
         self.dotname = dotname # string
         self.notes = notes # string 
     
-    def generate_and_save(self, fnames=None, dtname="default", maxDepth=3, dotName="default"):
+    def generate_and_save(self, fnames=None, dtdir=".", dtname="default", maxDepth=3, dotname="default"):
         labels = []
         samples = []
 
@@ -29,9 +30,18 @@ class DT():
 
         try:
             sampleList = []
-            for d in data:
-                labels.extend(d[:,0])
-                sampleList.append(d[:,1:])
+            for dIdx, d in enumerate(data):
+                # Handle the exception for single sample files (that is, data files with only one line)
+                # (numpy returns a list instead of a 2D array for 1 line files, which causes trouble in data shape
+                print "Reading file: "+str(fnames[dIdx])
+                if( len(d.shape) == 1 ):
+                    # single entry (i.e. sample) file
+                    labels.extend(d[0])
+                    sampleList.append(d[1:])
+                else:
+                    # multiple entry (i.e. sample) file
+                    labels.extend(d[:,0])
+                    sampleList.append(d[:,1:])
 
             samples = np.vstack(tuple(sampleList)) # convert sample list to a tuple
         except Exception as e:
@@ -45,17 +55,17 @@ class DT():
         try:
             clf = tree.DecisionTreeClassifier(criterion='gini', max_depth=maxDepth)
             clf = clf.fit(samples, labels)
-            with open(dotname+".dot", 'w') as f:
+            with open(dtdir+'/'+dotname+".dot", 'w') as f:
                 f = tree.export_graphviz(clf, out_file=f)
 
-            pickle.dump(clf, open(dtname+".pkl","wb"))
+            pickle.dump(clf, open(dtdir+'/'+dtname+".pkl","wb"))
         except Exception as e:
             print "Classifier or pickle error."
             print e
 
-    def save_notes(self,dtname, dotname, notes):
+    def save_notes(self,dtdir, dtname, dotname, notes):
         try:
-            f = open("notes_for_classifier_"+dtname+".pkl_"+dotname+".dot_.txt","w")
+            f = open(dtdir+'/'+"notes_for_classifier_"+dtname+".pkl_"+dotname+".dot_.txt","w")
             f.write(notes)
             f.close()
         except Exception as e:
@@ -71,6 +81,7 @@ class DT():
 if __name__ == "__main__" : 
     fnames = []
     dtname = ""
+    dtdir = ""
     notes = ""
     try:
         for aIdx, a in enumerate(sys.argv):
@@ -88,14 +99,18 @@ if __name__ == "__main__" :
 
             if a == "--depth":
                 maxDepth = int(sys.argv[aIdx + 1])
+
+            if a == "--dtdir":
+                dtdir = int(sys.argv[aIdx + 1])
+                
     except Exception as e:
-        print "Error using DTGenerator."
+        print "Error using DT class."
         print e
  
     print fnames
     print dtname
     print notes
 
-    myDt = DT(fnames, dtname, maxDepth, dotname, notes)
-    myDt.generate_and_save(fnames, dtname, maxDepth, dotname)
-    myDt.save_notes(dtname, dotname, notes)
+    myDt = DT(fnames, dtdir, dtname, maxDepth, dotname, notes)
+    myDt.generate_and_save(fnames, dtdir, dtname, maxDepth, dotname)
+    myDt.save_notes(dtdir, dtname, dotname, notes)
