@@ -96,6 +96,6 @@ if __name__ == "__main__" :
     print dtname
     print notes
 
-    dtg = DTGenerator(fnames, dtname, maxDepth, dotname, notes)
-    dtg.generate_and_save(fnames, dtname, maxDepth, dotname)
-    dtg.save_notes(dtname, dotname, notes)
+    myDt = DT(fnames, dtname, maxDepth, dotname, notes)
+    myDt.generate_and_save(fnames, dtname, maxDepth, dotname)
+    myDt.save_notes(dtname, dotname, notes)
