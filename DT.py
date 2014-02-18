@@ -21,7 +21,14 @@ class DT():
             # a list of matrices
             data = []
             for fname in fnames:
-                data.append( np.genfromtxt(fname, delimiter=",") ) # CSV only!
+                matrix = np.genfromtxt(fname, delimiter=",") # CSV only!
+                
+                # Handle the exception for single sample files (that is, data files with only one line)
+                # (numpy returns a list instead of a 2D array for 1 line files, which causes trouble in data shape
+                if( len( matrix.shape ) == 1 ):
+                    matrix = np.reshape( matrix, (1, len(matrix)) )
+                    
+                data.append( matrix ) 
 
             print "Loaded data from csv"
         except Exception, err:
@@ -31,18 +38,11 @@ class DT():
         try:
             sampleList = []
             for dIdx, d in enumerate(data):
-                # Handle the exception for single sample files (that is, data files with only one line)
-                # (numpy returns a list instead of a 2D array for 1 line files, which causes trouble in data shape
                 print "Reading file: "+str(fnames[dIdx])
-                if( len(d.shape) == 1 ):
-                    # single entry (i.e. sample) file
-                    labels.extend(d[0])
-                    sampleList.append(d[1:])
-                else:
-                    # multiple entry (i.e. sample) file
-                    labels.extend(d[:,0])
-                    sampleList.append(d[:,1:])
-
+                # multiple entry (i.e. sample) file
+                labels.extend(d[:,0])
+                sampleList.append(d[:,1:])
+                    
             samples = np.vstack(tuple(sampleList)) # convert sample list to a tuple
         except Exception as e:
             print "Error reshaping data."
@@ -101,7 +101,7 @@ if __name__ == "__main__" :
                 maxDepth = int(sys.argv[aIdx + 1])
 
             if a == "--dtdir":
-                dtdir = int(sys.argv[aIdx + 1])
+                dtdir = sys.argv[aIdx + 1]
                 
     except Exception as e:
         print "Error using DT class."
